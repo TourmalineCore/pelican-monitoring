@@ -1,0 +1,256 @@
+name: Perf + Security + Accessibility Monitoring on Prod
+
+on:
+  push:
+    branches:
+      - feature/*
+
+jobs:
+  validate-robots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Validate robots.txt
+        id: robots_txt_validation
+        run: |
+          echo "Fetching robots.txt..."
+          curl -sfL https://chelzoo.ru/robots.txt -o robots.txt
+          echo "Reading actual content..."
+          cat <<EOF > expected_robots.txt
+          # *
+          User-agent: *
+          Disallow: /components
+
+          # Host
+          Host: https://chelzoo.ru
+
+          # Sitemaps
+          Sitemap: https://chelzoo.ru/api/get-sitemap
+          EOF
+          echo "Comparing with expected content..."
+          if ! diff -u expected_robots.txt robots.txt; then
+            echo "❌ robots.txt does not match the expected content."
+            exit 1
+          fi
+          echo "✅ robots.txt matches expected content."
+
+  jmeter-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache JMeter
+        id: cache-jmeter
+        uses: actions/cache@v4
+        with:
+          path: ./apache-jmeter-5.6.3
+          key: jmeter-${{ runner.os }}-v5.6.3
+
+      - name: Download JMeter if not cached
+        if: steps.cache-jmeter.outputs.cache-hit != 'true'
+        run: |
+          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xzf apache-jmeter-5.6.3.tgz
+
+      - name: Add JMeter to PATH
+        run: echo "$PWD/apache-jmeter-5.6.3/bin" >> $GITHUB_PATH
+
+      - name: Create report directories
+        run: |
+          mkdir -p ./report
+          mkdir -p ./result
+          mkdir -p ./errors
+
+      - name: Run JMeter - Home Page
+        run: |
+          mkdir -p ./report/home-page
+          if ! jmeter -n -t ./tests/jmeter-tests/home-page.jmx \
+            -l ./report/home-page/home-page.jtl \
+            -Jjmeter.save.saveservice.output_format=xml \
+            -Jjmeter.save.saveservice.print_field_names=true \
+            -Jjmeter.save.saveservice.response_data.on_error=true \
+            -Jjmeter.save.saveservice.bytes=true \
+            -Jjmeter.save.saveservice.timestamp_format=ms; then
+            echo "JMETER_FAIL_homePage=1" >> $GITHUB_ENV
+            echo "❌ JMeter test failed: Home Page" >> ./errors/summary.txt
+          fi
+
+          cp ./report/home-page/home-page.jtl ./result/home-page.jtl || true
+
+          if ! npx tsx scripts/home-page-jmeter-validator.ts; then
+            echo "PARSER_FAIL_homePage=1" >> $GITHUB_ENV
+            echo "❌ Parser failed: Home Page" >> ./errors/summary.txt
+          fi
+
+      - name: Run JMeter - Documents Page
+        run: |
+          mkdir -p ./report/documents-page
+          if ! jmeter -n -t ./tests/jmeter-tests/documents-page.jmx \
+            -l ./report/documents-page/documents-page.jtl \
+            -Jjmeter.save.saveservice.output_format=xml \
+            -Jjmeter.save.saveservice.print_field_names=true \
+            -Jjmeter.save.saveservice.response_data.on_error=true \
+            -Jjmeter.save.saveservice.bytes=true \
+            -Jjmeter.save.saveservice.timestamp_format=ms; then
+            echo "JMETER_FAIL_documentsPage=1" >> $GITHUB_ENV
+            echo "❌ JMeter test failed: Documents Page" >> ./errors/summary.txt
+          fi
+
+          cp ./report/documents-page/documents-page.jtl ./result/documents-page.jtl || true
+
+          if ! npx tsx scripts/documents-page-jmeter-validator.ts; then
+            echo "PARSER_FAIL_documentsPage=1" >> $GITHUB_ENV
+            echo "❌ Parser failed: Documents Page" >> ./errors/summary.txt
+          fi
+
+      - name: Run JMeter - News Page
+        run: |
+          mkdir -p ./report/news-page
+          if ! jmeter -n -t ./tests/jmeter-tests/news-page.jmx \
+            -l ./report/news-page/news-page.jtl \
+            -Jjmeter.save.saveservice.output_format=xml \
+            -Jjmeter.save.saveservice.print_field_names=true \
+            -Jjmeter.save.saveservice.response_data.on_error=true \
+            -Jjmeter.save.saveservice.bytes=true \
+            -Jjmeter.save.saveservice.timestamp_format=ms; then
+            echo "JMETER_FAIL_newsPage=1" >> $GITHUB_ENV
+            echo "❌ JMeter test failed: News Page" >> ./errors/summary.txt
+          fi
+
+          cp ./report/news-page/news-page.jtl ./result/news-page.jtl || true
+
+          if ! npx tsx scripts/news-page-jmeter-validator.ts; then
+            echo "PARSER_FAIL_newsPage=1" >> $GITHUB_ENV
+            echo "❌ Parser failed: News Page" >> ./errors/summary.txt
+          fi
+
+      - name: Final validation & summary
+        run: |
+          echo "===== TEST SUMMARY ====="
+          if [ -f ./errors/summary.txt ]; then
+            cat ./errors/summary.txt
+            echo "========================"
+            exit 1
+          else
+            echo "✅ All JMeter tests and parsers passed."
+          fi
+
+  lighthouse:
+    needs: jmeter-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.15.x
+
+      - name: Create Lighthouse directory
+        run: mkdir -p .lighthouseci
+
+      - name: Run Lighthouse CI - Desktop
+        run: |
+          lhci autorun --config .lighthouserc.desktop.js --collect.outputPath=.lighthouseci/desktop || true
+          if [ ! -f ".lighthouseci/desktop/*.report.json" ]; then
+            echo "❌ Lighthouse CI failed: Desktop" >> ./lh-errors.txt
+            echo "LHCI_FAIL_desktop=1" >> $GITHUB_ENV
+          fi
+
+      - name: Run Lighthouse CI - Mobile
+        run: |
+          NODE_OPTIONS="--max-old-space-size=4096" lhci autorun --config .lighthouserc.mobile.js --collect.outputPath=.lighthouseci/mobile || true
+          if [ ! -f ".lighthouseci/mobile/*.report.json" ]; then
+            echo "❌ Lighthouse CI failed: Mobile" >> ./lh-errors.txt
+            echo "LHCI_FAIL_mobile=1" >> $GITHUB_ENV
+          fi
+
+      - name: Upload Lighthouse report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: |
+            .lighthouseci
+            lhci-links.out
+
+      - name: Parse Lighthouse JSON - Desktop
+        run: |
+          DESKTOP_JSON=$(find .lighthouseci/desktop -name '*.report.json' | head -n 1)
+          if [ -f "$DESKTOP_JSON" ]; then
+            TOTAL_BYTES=$(jq '.audits["network-requests"].details.items | map(.transferSize) | add' "$DESKTOP_JSON")
+            echo "💻 Desktop total transferred: ${TOTAL_BYTES} bytes"
+          else
+            echo "⚠️ Desktop Lighthouse JSON not found"
+          fi
+    
+      - name: Parse Lighthouse JSON - Mobile
+        run: |
+          MOBILE_JSON=$(find .lighthouseci/mobile -name '*.report.json' | head -n 1)
+          if [ -f "$MOBILE_JSON" ]; then
+            TOTAL_BYTES=$(jq '.audits["network-requests"].details.items | map(.transferSize) | add' "$MOBILE_JSON")
+            echo "📱 Mobile total transferred: ${TOTAL_BYTES} bytes"
+          else
+            echo "⚠️ Mobile Lighthouse JSON not found"
+          fi
+
+      - name: Final validation & summary
+        if: always()
+        run: |
+          echo "===== LIGHTHOUSE TEST SUMMARY ====="
+          if [ -f ./lh-errors.txt ]; then
+            cat ./lh-errors.txt
+            echo "================================"
+            exit 1
+          else
+            echo "✅ All Lighthouse checks passed."
+          fi
+
+  validate-cache-headers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright with browsers
+        run: npx playwright install --with-deps chromium
+        
+      - name: Run Playwright test
+        run: npx playwright test tests/playwright-tests/cache-checker.spec.ts --reporter=list
+        
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-validation-results
+          path: |
+            results.json
+            playwright-report/

@@ -1,0 +1,19 @@
+module.exports = {
+  ci: {
+    collect: {
+      url: ['https://chelzoo.ru?mobile'],
+      numberOfRuns: 1,
+      settings: {
+        additive: "true",
+        output: ['html', 'json'],
+      },
+    },
+    upload: {
+      target: 'temporary-public-storage',
+      outputDir: '.lighthouseci'
+    },
+    assert: {
+      preset: 'lighthouse:recommended'
+    }
+  },
+};
