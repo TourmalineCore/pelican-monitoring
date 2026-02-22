@@ -48,7 +48,7 @@ jobs:
           env:
             TEST_STATUS: ${{ steps.playwright_test.outcome }}
           run: |
-            if [ "$TEST_STATUS" == "success"]; then
+            if [ "$TEST_STATUS" == "success" ]; then
               echo "Хедеры кэширования проверены успешно" > message.txt
               
               echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt

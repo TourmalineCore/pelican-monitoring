@@ -196,7 +196,7 @@ jobs:
         env:
           TEST_STATUS: ${{ steps.jmeter_validation.outcome }}
         run: |
-          if [ "$TEST_STATUS" == "success"]; then
+          if [ "$TEST_STATUS" == "success" ]; then
             echo "Тестирование производительности через JMeter пройдено успешно" > message.txt
             
             echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt
