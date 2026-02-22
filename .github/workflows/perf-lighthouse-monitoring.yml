@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '30 0 * * *'
     - cron: '30 8 * * *'
-  push:
-    branches:
-      - feature/**
 
 env:
   # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message

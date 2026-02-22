@@ -3,9 +3,6 @@ name: Performance + robots.txt Monitoring on Prod
 on:
   schedule:
     - cron: '0 * * * *'
-  push:
-    branches:
-      - feature/**
 
 env:
   # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
