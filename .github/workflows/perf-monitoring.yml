@@ -8,6 +8,7 @@ on:
       - feature/**
 
 env:
+  # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
   WORKFLOW_RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
