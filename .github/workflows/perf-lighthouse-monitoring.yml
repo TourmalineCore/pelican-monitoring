@@ -77,7 +77,7 @@ jobs:
         - name: Send notification to telegram chat
           if: always()
           env:
-            TEST_STATUS: ${{ steps.robots_txt_validation.outcome }}
+            TEST_STATUS: ${{ steps.validation.outcome }}
             PELICAN_MONITORING_BOT_TELEGRAM_TOKEN: ${{ secrets.PELICAN_MONITORING_BOT_TELEGRAM_TOKEN }}
             PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID }}
             PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID }}
