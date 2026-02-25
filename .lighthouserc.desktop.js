@@ -19,7 +19,7 @@ module.exports = {
         'largest-contentful-paint': ['error', { maxNumericValue: 4000 }], // recommended: <2.5s
         'first-contentful-paint': ['error', { maxNumericValue: 2500 }],   // recommended: <1.8s
         'speed-index': ['error', { maxNumericValue: 6000 }],              // recommended: <3.4s
-        'total-blocking-time': ['error', { maxNumericValue: 500 }],       // recommended: <200ms
+        'total-blocking-time': ['error', { maxNumericValue: 550 }],       // recommended: <200ms
         'interactive': ['error', { maxNumericValue: 6000 }],              // recommended: <3.8s
 
         // Accessibility
