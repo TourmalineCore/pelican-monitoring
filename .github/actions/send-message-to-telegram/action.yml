@@ -23,7 +23,7 @@ runs:
         -d "chat_id=${INPUT_TELEGRAM_CHAT_ID}&text=$(cat message.txt)" > /dev/null 2>&1
       shell: bash
       env:
-        INPUT_MESSAGE: ${{ inputs.failure-message }}
+        INPUT_MESSAGE: ${{ inputs.message }}
         INPUT_TELEGRAM_TOKEN: ${{ inputs.telegram-token }}
         INPUT_TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
         # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
