@@ -39,7 +39,7 @@ jobs:
               test-logs.txt  # Optional: Include the log file in artifacts for download/archive
         
         - name: Send notification to the telegram chat
-          if: ${{ steps.playwright_test.outcome }}
+          if: ${{ !steps.playwright_test.outcome }}
           uses: ./.github/actions/send-message-to-telegram
           with:
             message: "Возникла ошибка при проверке хедеров кеширования."
