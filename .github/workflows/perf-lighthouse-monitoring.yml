@@ -75,6 +75,10 @@ jobs:
               echo "✅ All Lighthouse checks passed."
             fi
 
+        - name: check outcome
+          if: always()
+          run: echo ${{ steps.validation.outcome }}
+
         - name: Send notification to the telegram chat
           if: ${{ steps.validation.outcome == 'failure' }}
           uses: ./.github/actions/send-message-to-telegram
