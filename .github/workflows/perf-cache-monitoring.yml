@@ -1,12 +1,9 @@
 name: Cache Monitoring on Prod
 
 on:
+  push:
   schedule:
     - cron: '30 0 * * *'
-            
-env:
-  # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
-  WORKFLOW_RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
   validate-cache-headers:
@@ -41,36 +38,10 @@ jobs:
               playwright-report/
               test-logs.txt  # Optional: Include the log file in artifacts for download/archive
         
-        - name: Send notification to telegram chat
-          if: always()
-          env:
-            TEST_STATUS: ${{ steps.playwright_test.outcome }}
-            PELICAN_MONITORING_BOT_TELEGRAM_TOKEN: ${{ secrets.PELICAN_MONITORING_BOT_TELEGRAM_TOKEN }}
-            PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID }}
-            PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID }}
-          run: |
-            if [ "$TEST_STATUS" == "success" ]; then
-              echo "Хедеры кэширования проверены успешно" > message.txt
-              
-              echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt
-
-              curl -s -X POST "https://api.telegram.org/bot${PELICAN_MONITORING_BOT_TELEGRAM_TOKEN}/sendMessage" \
-              -d "chat_id=${PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID}&text=$(cat message.txt)" > /dev/null 2>&1
-            else
-              echo "Возникла ошибка при проверке хедеров кеширования" > message.txt
-
-              echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt
-
-              curl -s -X POST "https://api.telegram.org/bot${PELICAN_MONITORING_BOT_TELEGRAM_TOKEN}/sendMessage" \
-              -d "chat_id=${PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID}&text=$(cat message.txt)" > /dev/null 2>&1
-            fi
-        # - name: FINAL VALIDATION & SUMMARY TEST REPORT
-        #   if: always()
-        #   run: |
-        #     if [ -f test-logs.txt ]; then
-        #       echo "===== Playwright Test Logs ====="
-        #       cat test-logs.txt
-        #       echo "================================"
-        #     else
-        #       echo "No test logs found."
-        #     fi
+        - name: Send notification to the telegram chat
+          if: ${{ steps.playwright_test.outcome }}
+          uses: ./github/actions/send-message-to-telegram
+          with:
+            message: "Возникла ошибка при проверке хедеров кеширования."
+            telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+            telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}
