@@ -1,6 +1,7 @@
 name: Lighthouse Monitoring on Prod
 
 on:
+  push:
   schedule:
     - cron: '30 0 * * *'
     - cron: '30 8 * * *'
@@ -74,26 +75,10 @@ jobs:
               echo "✅ All Lighthouse checks passed."
             fi
 
-        - name: Send notification to telegram chat
-          if: always()
-          env:
-            TEST_STATUS: ${{ steps.validation.outcome }}
-            PELICAN_MONITORING_BOT_TELEGRAM_TOKEN: ${{ secrets.PELICAN_MONITORING_BOT_TELEGRAM_TOKEN }}
-            PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID }}
-            PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID: ${{ secrets.PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID }}
-          run: |
-            if [ "$TEST_STATUS" == "success" ]; then
-              echo "Тестирование производительности через Lighthouse пройдено успешно" > message.txt
-              
-              echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt
-
-              curl -s -X POST "https://api.telegram.org/bot${PELICAN_MONITORING_BOT_TELEGRAM_TOKEN}/sendMessage" \
-              -d "chat_id=${PELICAN_MONITORING_SUCCESSFUL_TESTS_TELEGRAM_CHAT_ID}&text=$(cat message.txt)" > /dev/null 2>&1
-            else
-              echo "Возникла ошибка при тестировании производительности через Lighthouse" > message.txt
-
-              echo ${{ env.WORKFLOW_RUN_LINK }} >> message.txt
-
-              curl -s -X POST "https://api.telegram.org/bot${PELICAN_MONITORING_BOT_TELEGRAM_TOKEN}/sendMessage" \
-              -d "chat_id=${PELICAN_MONITORING_FAILED_TESTS_TELEGRAM_CHAT_ID}&text=$(cat message.txt)" > /dev/null 2>&1
-            fi
+        - name: Send notification to the telegram chat
+          if: ${{ !steps.validation.outcome }}
+          uses: ./.github/actions/send-message-to-telegram
+          with:
+            message: "Возникла ошибка при тестировании производительности через Lighthouse."
+            telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+            telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}
