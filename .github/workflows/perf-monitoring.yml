@@ -33,7 +33,6 @@ jobs:
           fi
           echo "✅ robots.txt matches expected content."
 
-
       - name: Send notification to the telegram chat
         if: failure()
         uses: ./.github/actions/send-message
@@ -168,7 +167,6 @@ jobs:
           else
             echo "✅ All JMeter tests and parsers passed."
           fi
-
 
       - name: Send notification to the telegram chat
         if: failure()
