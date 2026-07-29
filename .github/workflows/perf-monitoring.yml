@@ -5,10 +5,6 @@ on:
   schedule:
     - cron: '0 * * * *'
 
-env:
-  # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
-  WORKFLOW_RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
 jobs:
   validate-robots:
     runs-on: ubuntu-24.04
@@ -149,7 +145,6 @@ jobs:
           cp ./report/news-page/news-page.jtl ./result/news-page.jtl || true
 
       - name: FINAL VALIDATION & SUMMARY TEST REPORT
-        id: jmeter_validation
         run: |
           if ! npx tsx scripts/home-page-jmeter-validator.ts; then
             echo "PARSER_FAIL_homePage=1" >> $GITHUB_ENV

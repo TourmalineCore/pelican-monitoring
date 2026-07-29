@@ -6,10 +6,6 @@ on:
     - cron: '30 0 * * *'
     - cron: '30 8 * * *'
 
-env:
-  # WORKFLOW_RUN_LINK var is needed to attach link of the current workflow run to the telegram notification message
-  WORKFLOW_RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
 jobs:
   lighthouse:
       runs-on: ubuntu-24.04
@@ -64,7 +60,6 @@ jobs:
 
         - name: Final validation & summary
           if: always()
-          id: validation
           run: |
             echo "===== LIGHTHOUSE TEST SUMMARY ====="
             if [ -f ./lh-errors.txt ]; then
