@@ -76,7 +76,7 @@ jobs:
             fi
 
         - name: Send notification to the telegram chat
-          if: ${{ always() && steps.validation.outcome == 'failure' }}
+          if: failure()
           uses: ./.github/actions/send-message-to-telegram
           with:
             message: "Возникла ошибка при тестировании производительности через Lighthouse."
