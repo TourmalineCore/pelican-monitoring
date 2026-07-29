@@ -144,7 +144,7 @@ jobs:
 
           cp ./report/news-page/news-page.jtl ./result/news-page.jtl || true
 
-      - name: FINAL VALIDATION & SUMMARY TEST REPORT
+      - name: FINAL VALIDATION & SUMMARY TEST REPORT 
         run: |
           if ! npx tsx scripts/home-page-jmeter-validator.ts; then
             echo "PARSER_FAIL_homePage=1" >> $GITHUB_ENV
