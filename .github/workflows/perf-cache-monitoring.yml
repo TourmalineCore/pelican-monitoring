@@ -3,10 +3,6 @@ name: Cache Monitoring on Prod
 on:
   schedule:
     - cron: '30 0 * * *'
-            
-  # push:
-  #   branches:
-  #     - feature/*
 
 jobs:
   validate-cache-headers:
@@ -40,13 +36,10 @@ jobs:
               playwright-report/
               test-logs.txt  # Optional: Include the log file in artifacts for download/archive
         
-        # - name: FINAL VALIDATION & SUMMARY TEST REPORT
-        #   if: always()
-        #   run: |
-        #     if [ -f test-logs.txt ]; then
-        #       echo "===== Playwright Test Logs ====="
-        #       cat test-logs.txt
-        #       echo "================================"
-        #     else
-        #       echo "No test logs found."
-        #     fi
+        - name: Send notification to the telegram chat
+          if: failure()
+          uses: ./.github/actions/send-message
+          with:
+            message: "Возникла ошибка при проверке хедеров кеширования."
+            telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+            telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}

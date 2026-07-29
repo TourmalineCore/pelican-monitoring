@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '30 0 * * *'
     - cron: '30 8 * * *'
-  # push:
-  #   branches:
-  #     - feature/*
 
 jobs:
   lighthouse:
@@ -71,3 +68,11 @@ jobs:
             else
               echo "✅ All Lighthouse checks passed."
             fi
+
+        - name: Send notification to the telegram chat
+          if: failure()
+          uses: ./.github/actions/send-message
+          with:
+            message: "Возникла ошибка при тестировании производительности через Lighthouse."
+            telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+            telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}

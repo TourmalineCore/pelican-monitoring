@@ -4,10 +4,6 @@ on:
   schedule:
     - cron: '0 * * * *'
 
-  # push:
-  #   branches:
-  #     - feature/*
-
 jobs:
   validate-robots:
     runs-on: ubuntu-24.04
@@ -36,6 +32,14 @@ jobs:
             exit 1
           fi
           echo "✅ robots.txt matches expected content."
+
+      - name: Send notification to the telegram chat
+        if: failure()
+        uses: ./.github/actions/send-message
+        with:
+          message: "Возникла ошибка при проверке индексации."
+          telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+          telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}
 
   jmeter-tests:
     runs-on: ubuntu-24.04
@@ -163,3 +167,11 @@ jobs:
           else
             echo "✅ All JMeter tests and parsers passed."
           fi
+
+      - name: Send notification to the telegram chat
+        if: failure()
+        uses: ./.github/actions/send-message
+        with:
+          message: "Возникла ошибка при тестировании производительности через JMeter."
+          telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
+          telegram-chat-id: ${{ secrets.PELICAN_NOTIFICATIONS_CHAT_ID }}
