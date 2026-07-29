@@ -1,7 +1,6 @@
 name: Performance + robots.txt Monitoring on Prod
 
 on:
-  push:
   schedule:
     - cron: '0 * * * *'
 
