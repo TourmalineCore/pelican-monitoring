@@ -11,6 +11,8 @@ inputs:
     required: true
 
 runs:
+  # In the custom actions "using" is required. Composite is used when it`s needed to reuse steps in pipeline.
+  # You can learn more about custom actions here: https://docs.github.com/en/actions/concepts/workflows-and-actions/custom-actions
   using: "composite"
   steps:
     - name: Send message
