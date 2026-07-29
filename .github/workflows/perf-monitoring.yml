@@ -41,7 +41,7 @@ jobs:
 
       - name: Send notification to the telegram chat
         if: failure()
-        uses: ./.github/actions/send-message-to-telegram
+        uses: ./.github/actions/send-message
         with:
           message: "Возникла ошибка при проверке индексации."
           telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
@@ -178,7 +178,7 @@ jobs:
 
       - name: Send notification to the telegram chat
         if: failure()
-        uses: ./.github/actions/send-message-to-telegram
+        uses: ./.github/actions/send-message
         with:
           message: "Возникла ошибка при тестировании производительности через JMeter."
           telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}

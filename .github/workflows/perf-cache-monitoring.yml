@@ -40,7 +40,7 @@ jobs:
         
         - name: Send notification to the telegram chat
           if: failure()
-          uses: ./.github/actions/send-message-to-telegram
+          uses: ./.github/actions/send-message
           with:
             message: "Возникла ошибка при проверке хедеров кеширования."
             telegram-token: ${{ secrets.PELICAN_NOTIFICATIONS_BOT_TELEGRAM_TOKEN }}
